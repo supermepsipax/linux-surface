@@ -2,7 +2,7 @@
 # Maintainer: Blaž Hrastnik <blaz@mxxn.io>
 # Maintainer: Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 
-pkgbase=linux-surface
+pkgbase=linux-surface-ipu4
 pkgver=6.18.7.arch1
 pkgrel=1
 pkgdesc='Linux'
@@ -42,6 +42,7 @@ source=(
 
   surface.config # surface specific options
   arch.config # config changes for linux-surface kernel
+  ipu4.config
   0001-secureboot.patch
   0002-surface3.patch
   0003-mwifiex.patch
@@ -69,23 +70,24 @@ sha256sums=('4323793a7e149c18632671b692d1f90ec991c2097167d9de8413636ae432073c'
             'd0ce1ee11ca0bc6a817c3c17a2651076409bd9fd6c0ab9e744aae2131ab654ce'
             '233a1c4d898b7720dd623421b694cc030075317b01cba6444b53faefc7b2ca55'
             '008e37de7e6cf8b9479ef0f0f425a25092646e85d741aedd056e5ff3e1096361'
-            '504062f0ed5f4bd238ff1775ba809ce2d10e675902532c1a0796bc3f2a5b47aa'
-            '0ec23c28f5ada5df2872806efcc2ef5b1ec225891112c9eb8dd2b0b6b507c923'
-            '5cba99600cea14ae8b8e512e79e14897b47a668c469a942752b36bb3bfa1f43a'
-            '82062e65aa29d7a5900ce9096e94a670da9eeac405b7bcfe8ff7a299147d044a'
-            '914d2dc9724c7e9f50948680db4291646d9ebf97ee8f94c819c77fd5a15a6bf9'
-            'baa00e12c12e10f86857857977183a4c144a2f6100be9aab85de436510010a8b'
-            '0243436e97a99881b8e8974fe0cfce14b0d80e5ad9be82c527e9616412a494ce'
-            '6dd0dda89c4f76a6ba51e2b5107f0d70866ffadea0918ebca5f4a4ed57f7eb21'
-            'd9beeb6b18cafca90445adb0897d6033684060852ca45634595707e62898ba75'
-            '085f08e1fe5c505f6a8e95819e69e3144ace6954260131c9d0910beac1176733'
-            '96f3c35d2a763346d02ce212747e4944dc45bfb2e91b6c61fe8e4d60a0634c95'
-            '7e50bb11c051579042a172f7563bc1c0d33cc7a649334ec1f428641e10b0c4a5'
-            'd8427605a6805152517d7edc14c06dd86f8b004d6cfe11ea33177938c5720a7c'
-            'c34120274bacbd5e0e7c7a0f8db420bf5da0773e05752e1510324469d48f4f53'
-            'ba6be94290bcfcd6614fefad4b9418f812699a7a340a4edd218628324c2d2c9d'
-            'fde839050a7648ff1b8782df364e1e62f6a2b575e437e04043c7179d74cbf157'
-            'c9350beb089cb23b22ff156521575979d23abaafc3adc69d5068ebc303cfa0fe')
+            'ff81fc099dd3b19a5aa612f869f6c1b2218726d6dfd0873cb01854adc2401050'
+            'ab4fd487706ade03dc93cf69626d74078acb52fca44b8cce6ced4441010fc6d0'
+            '1c43142fcda8c1930088ba46d4eaa00cf79c13fd85ae01e805c2e8493434dab9'
+            'a095709f89e099de313b147d960c1ed34321f0e5d22e9f8d458ac8b749f1bdb9'
+            'c20d3cfedcb73c841bbc22ef4bfdf7d95f1d8cb9b189557b24bc97225611a30d'
+            '919647d1a2d994085482204cbf17a535352456ffb940b065c15b6a9a125c2705'
+            '2f159d6e7983ce4c1a1fc1e14953e4786aa76aa6dabdec07f542ba26f1161d9f'
+            '697c47f0b1ac8381d4a4033fb134cc411861d6a6dc8719b31f0fe148e27938ac'
+            '30837027dc0f81db14be5dc2d992c6e848865459bb0628ccb7608f7da34b3209'
+            'c85e8eca38dec0244716e2153d78a1f719e97fee3fbafbf31f0e047b39e88dd6'
+            '3bd08ece79650b327820446b10e45458a1aa622234b220e5b9f53115a98318cf'
+            '257defbb9af8635425928176821fd0ce72e5425e32328841e4f899db2769f05e'
+            '6b7e1a203e35cf000449908c98b8a72f1b445015b0cf8339c79c749ed2958349'
+            '5fb4d0eb4c54235efd40d2f4bf5c62d97e2ddc46716bdb1709a6f4e6b7b1fffc'
+            '075ada4551dcf52eccc808657b96afd50be7140e54bf6ee5106f6159953e25c0'
+            'a801c2d763ba3d8f4d837279871cf89dffb79c5d156835ae4679a019bdaad969'
+            '0cf4166c8b12f8e3c610d4ae9c567e276f3d43e5a199a338c6a7963c3b10bd09'
+            'a8f58a822e13a41394cf7328c967c5b242faa49f116e3fcbb31fc0a3c64e6b88')
 
 
 export KBUILD_BUILD_HOST=archlinux
@@ -124,10 +126,26 @@ prepare() {
     git am -3 "../$src"
   done
 
+  # Apply IPU4 WIP patches
+  local _ipu4_patch_dir="${srcdir}/../ipu4-patches"
+  if [[ -d "$_ipu4_patch_dir" ]]; then
+      for patch in "$_ipu4_patch_dir"/*.patch; do
+          echo "Applying IPU4 patch: $(basename "$patch")"
+          git am -3 < "$patch" || echo "WARNING: Patch failed: $(basename "$patch")"
+      done
+  fi
+
   echo "Setting config..."
   # cp ../config .config
   # merge the two configs together
-  ./scripts/kconfig/merge_config.sh -m ../config ../surface.config ../arch.config
+  ./scripts/kconfig/merge_config.sh -m ../config ../surface.config ../arch.config ../ipu4.config
+  _make olddefconfig
+
+  echo "Stripping config to locally loaded modules..."
+  yes "" | _make localmodconfig
+
+  echo "Re-applying Surface and IPU4 configs after localmodconfig..."
+  ./scripts/kconfig/merge_config.sh -m .config ../surface.config ../ipu4.config
   _make olddefconfig
 
   echo "Prepared $pkgbase version $(<version)"
